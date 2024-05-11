@@ -31,10 +31,12 @@ type multipartProgressListener struct {
 
 // 实现oss.ProgressListener的接口
 func (listener *multipartProgressListener) ProgressChanged(event *oss.ProgressEvent) {
+
 	switch event.EventType {
 	case oss.TransferStartedEvent:
 	case oss.TransferDataEvent:
 	case oss.TransferCompletedEvent:
+		log.Printf("%d / %d\n", bar.Current(), bar.Total())
 		bar.Add64(event.ConsumedBytes)
 	case oss.TransferFailedEvent:
 	default:
