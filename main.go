@@ -72,17 +72,19 @@ var (
 	proxyPassword   string
 	httpClient      = &http.Client{Timeout: 30 * time.Second}
 	ecdhCipher      *cipher.EcdhCipher
+	passTotalHash   *bool
 )
 
 // 设置数据
 type uploadConfig struct {
-	Cookies   string `json:"cookies"`   // 115网页版的Cookie
-	CID       uint64 `json:"cid"`       // 115里文件夹的cid
-	ResultDir string `json:"resultDir"` // 在指定文件夹保存上传结果
-	HTTPRetry uint   `json:"httpRetry"` // HTTP请求失败后的重试次数
-	HTTPProxy string `json:"httpProxy"` // HTTP代理
-	OSSProxy  string `json:"ossProxy"`  // OSS上传代理
-	PartsNum  uint   `json:"partsNum"`  // 断点续传的分片数量
+	Cookies       string `json:"cookies"`       // 115网页版的Cookie
+	CID           uint64 `json:"cid"`           // 115里文件夹的cid
+	ResultDir     string `json:"resultDir"`     // 在指定文件夹保存上传结果
+	HTTPRetry     uint   `json:"httpRetry"`     // HTTP请求失败后的重试次数
+	HTTPProxy     string `json:"httpProxy"`     // HTTP代理
+	OSSProxy      string `json:"ossProxy"`      // OSS上传代理
+	PartsNum      uint   `json:"partsNum"`      // 断点续传的分片数量
+	PassTotalHash bool   `json:"passTotalHash"` // 断点续传的分片数量
 }
 
 // 上传结果数据
@@ -403,7 +405,8 @@ func initialize() (e error) {
 	recursive = flag.Bool("recursive", false, "递归上传文件夹")
 	partsNum := flag.Uint("parts-num", 0, "断点续传模式上传文件的`分片数量`，范围为1到10000，默认为0（即自动分片）")
 	verbose = flag.Bool("v", false, "显示更详细的信息（调试用）")
-	help := flag.Bool("h", false, "显示帮助信息")
+	help := flag.Bool("h", false, "도움말")
+	passTotalHash := flag.Bool("p", false, "passTotalHash")
 
 	flag.Parse()
 
@@ -438,8 +441,10 @@ func initialize() (e error) {
 		os.Exit(1)
 	}
 
+	config.PassTotalHash = *passTotalHash
+
 	if *partsNum != 0 && !*multipartUpload {
-		log.Println("-parts-num参数只支持断点续传模式")
+		log.Println("-parts-num 参数只支持断点续传模式")
 		os.Exit(1)
 	}
 	// 优先使用参数指定的分片数量
@@ -447,7 +452,7 @@ func initialize() (e error) {
 		config.PartsNum = *partsNum
 	}
 	if config.PartsNum > maxParts {
-		log.Printf("分片数量不能大于%d", maxParts)
+		log.Printf("config.PartsNum > maxParts 分片数量不能大于%d", maxParts)
 		os.Exit(1)
 	}
 

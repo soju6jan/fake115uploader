@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 )
@@ -47,14 +48,21 @@ func hashSHA1(f *os.File) (blockHash, totalHash string, e error) {
 	checkErr(err)
 	data := sha1.Sum(block[:n])
 	blockHash = strings.ToUpper(hex.EncodeToString(data[:]))
-	_, err = f.Seek(0, io.SeekStart)
-	checkErr(err)
+	if config.PassTotalHash {
+		log.Println("PassTotalHash!!")
+		totalHash = blockHash
+	} else {
+		log.Println("TotalHash calc...... ")
+		_, err = f.Seek(0, io.SeekStart)
+		checkErr(err)
 
-	// 计算整个文件的sha1 hash值
-	h := sha1.New()
-	_, err = io.Copy(h, f)
-	checkErr(err)
-	totalHash = strings.ToUpper(hex.EncodeToString(h.Sum(nil)))
+		// 计算整个文件的sha1 hash值
+		h := sha1.New()
+		_, err = io.Copy(h, f)
+		checkErr(err)
+		totalHash = strings.ToUpper(hex.EncodeToString(h.Sum(nil)))
+		log.Println("TotalHash calc......END")
+	}
 
 	return blockHash, totalHash, nil
 }
